@@ -122,7 +122,7 @@ public class TrackerClient {
 
   private void recalculateAnnounceInterval(long regularInterval, long minimalInterval) {
     minimalInterval = Math.max(minimalInterval * 1000, 300 * 1000);
-    announceInterval *= 1.25;
+    announceInterval = (long) (announceInterval * 1.25);
     announceInterval = Math.max(10 * 1000, announceInterval);
     announceInterval = Math.min(minimalInterval, announceInterval);
     logger.debug("using announce interval of " + announceInterval / 1000 + " seconds");
