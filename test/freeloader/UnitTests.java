@@ -49,6 +49,7 @@ public class UnitTests {
       VersionTest.class,
       BuildScriptVersionsTest.class,
       freeloader.gui.FormatTest.class,
+      freeloader.gui.UpdateCheckTest.class,
       HashTest.class,
       PeerIdTest.class,
       MetaInfoBuilderTest.class,
