@@ -57,6 +57,53 @@ jobs:
         shell: cmd
         run: build-exe.bat
 
+      # A Windows installer around the same app folder, made by jpackage
+      # with the WiX toolset that GitHub's Windows machines come with.
+      # It installs per user (no administrator rights), offers a Start
+      # menu entry and a desktop shortcut, lets people pick the folder,
+      # and replaces an older version (same upgrade UUID every release).
+      - name: Build the installer
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ($env:WIX) { $env:PATH = "$env:WIX\bin;$env:PATH" }
+          $options = @(
+            '--app-image', 'dist\Freeloader', '--name', 'Freeloader', '--app-version', $env:VERSION,
+            '--vendor', 'Jan Syryczynski', '--description', 'No upload BitTorrent client',
+            '--license-file', 'LICENSE',
+            '--win-per-user-install', '--win-dir-chooser', '--win-menu', '--win-shortcut', '--win-shortcut-prompt',
+            '--win-upgrade-uuid', '02afc6ae-5538-4aa1-b1e7-17abd0133ab2',
+            '--win-help-url', 'https://github.com/jsyryczynski/freeloader',
+            '--win-update-url', 'https://github.com/jsyryczynski/freeloader/releases')
+          jpackage --type exe --dest dist\installer @options
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Move-Item "dist\installer\Freeloader-$env:VERSION.exe" "dist\Freeloader-$env:VERSION-setup.exe"
+          # the same installer as an .msi, only to test it below: an .msi
+          # can be installed without any window
+          jpackage --type msi --dest dist\installer @options
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test the installer
+        shell: pwsh
+        timeout-minutes: 10
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $msi = Resolve-Path "dist\installer\Freeloader-$env:VERSION.msi"
+          $install = Start-Process msiexec -ArgumentList '/i', "`"$msi`"", '/qn', '/l*v', 'install.log' -Wait -PassThru
+          if ($install.ExitCode -ne 0) { Get-Content install.log -Tail 40; throw "installing failed: $($install.ExitCode)" }
+          $exe = Get-ChildItem "$env:LOCALAPPDATA" -Recurse -Filter Freeloader.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $exe) { throw "Freeloader.exe was not installed" }
+          Write-Host "installed: $($exe.FullName)"
+          $help = & $exe.FullName --help 2>&1 | Out-String
+          if ($help -notmatch 'usage') { Write-Host $help; throw "the installed app did not start" }
+          Write-Host "the installed app starts: $($help.Split("`n")[0].Trim())"
+          $remove = Start-Process msiexec -ArgumentList '/x', "`"$msi`"", '/qn' -Wait -PassThru
+          if ($remove.ExitCode -ne 0) { throw "uninstalling failed: $($remove.ExitCode)" }
+          if (Test-Path $exe.FullName) { throw "uninstalling left Freeloader.exe behind" }
+          Write-Host "uninstalled cleanly"
+
       # the GPL asks for the source to go with the app: the code at this
       # version, without the git history
       - name: Pack the source code
@@ -68,6 +115,7 @@ jobs:
         with:
           name: Freeloader-${{ steps.version.outputs.version }}
           path: |
+            dist/Freeloader-${{ steps.version.outputs.version }}-setup.exe
             dist/Freeloader-${{ steps.version.outputs.version }}.7z
             dist/Freeloader-${{ steps.version.outputs.version }}-source.zip
 
@@ -79,10 +127,12 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           $notes = @"
-          Download **Freeloader-$env:VERSION.7z**, unpack it anywhere and run **Freeloader.exe** inside the Freeloader folder. No Java install is needed.
+          **Freeloader-$env:VERSION-setup.exe**: run it to install Freeloader for your Windows user (no administrator rights needed), with a Start menu entry and an uninstaller.
 
-          - Windows 11 opens .7z files in Explorer. On older Windows, use [7-Zip](https://www.7-zip.org/).
-          - The app isn't code-signed, so Windows may show "Windows protected your PC" the first time. Choose "More info", then "Run anyway".
-          - **Freeloader-$env:VERSION-source.zip** is the source code of this version (GPL v2 or later).
+          **Freeloader-$env:VERSION.7z**: no install. Unpack it anywhere and run **Freeloader.exe** in the Freeloader folder. Windows 11 opens .7z files in Explorer; on older Windows use [7-Zip](https://www.7-zip.org/).
+
+          No Java install is needed either way. The files aren't code-signed, so Windows may show "Windows protected your PC" the first time: choose "More info", then "Run anyway".
+
+          **Freeloader-$env:VERSION-source.zip** is the source code of this version (GPL v2 or later).
           "@
-          gh release create $env:GITHUB_REF_NAME "dist/Freeloader-$env:VERSION.7z" "dist/Freeloader-$env:VERSION-source.zip" --title "Freeloader $env:VERSION" --notes $notes
+          gh release create $env:GITHUB_REF_NAME "dist/Freeloader-$env:VERSION-setup.exe" "dist/Freeloader-$env:VERSION.7z" "dist/Freeloader-$env:VERSION-source.zip" --title "Freeloader $env:VERSION" --notes $notes
