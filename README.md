@@ -22,6 +22,34 @@ is optional.
 - **Nothing about peers or trackers is saved.** What Freeloader learns
   about them is kept in memory only and gone when it exits.
 
+## What other clients and trackers see
+
+**Uploading.** Freeloader never sends any downloaded data to anyone: it
+never unchokes a peer and never answers a request for a piece (the tests
+check this). What it reports is a different matter:
+
+- The torrent's main tracker is told an upload total that matches the
+  download so far times a share ratio, so the client looks like an
+  ordinary one that shares. The ratio is picked at random between 1.00
+  and 1.33 for each .torrent added in the window, and is 1.092 for
+  magnet links and command-line downloads. The figure is made up;
+  nothing is actually uploaded.
+- The extra announces made while searching for peers (to every tracker
+  in the torrent, HTTP and UDP) report 0 uploaded and 0 downloaded, like
+  a client that has just started.
+- Other peers are not told any upload figure; the BitTorrent protocol
+  has no message for it.
+
+**Identifying itself.** Freeloader presents itself as **BitTorrent 4.4.0**,
+the official BitTorrent client of that version, never as Freeloader or
+BitThief:
+
+- its peer ID starts with `M4-4-0--` (the rest is random, and new for
+  each download), which is how BitTorrent 4.4.0 marks its peer IDs;
+- it sends `BitTorrent/4.4.0` as the User-Agent to HTTP trackers;
+- its extension handshake carries no client name (the optional `v`
+  field is left out), and neither do its DHT messages.
+
 ## Download
 
 From the [Releases page](https://github.com/jsyryczynski/freeloader/releases):
