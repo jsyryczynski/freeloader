@@ -53,6 +53,7 @@ jobs:
         shell: pwsh
         env:
           WANTED: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           $wanted = "$env:WANTED".Trim().TrimStart('v')
           if ($wanted) {
@@ -64,8 +65,20 @@ jobs:
             if ($publish) {
               git fetch --tags --quiet
               if (git tag --list "v$wanted") {
-                Write-Error "v$wanted is already released; choose a new version"
-                exit 1
+                gh release view "v$wanted" --json tagName 2>$null | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                  Write-Error "v$wanted is already released; choose a new version"
+                  exit 1
+                }
+                # an earlier run pushed the tag but didn't finish the release (the
+                # tag can't be deleted): build the tagged commit and publish it
+                Write-Host "v$wanted is tagged but has no release yet: finishing it"
+                git checkout --quiet "v$wanted"
+                if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                "version=$wanted" >> $env:GITHUB_OUTPUT
+                "stamp=false" >> $env:GITHUB_OUTPUT
+                "publish=true" >> $env:GITHUB_OUTPUT
+                exit 0
               }
             } else {
               Write-Host "Not on master: a trial, nothing is published"

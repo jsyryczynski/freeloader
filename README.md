@@ -239,7 +239,9 @@ The Release workflow (`.github/workflows/release.yml`) then:
 4. tags the version commit `v<version>` and publishes the release. Its
    notes list the pull requests merged since the previous release.
 
-A version that is already released is refused. Run from any other branch,
+A version that is already released is refused. If a run tagged the
+version but failed before publishing, run it again with the same version:
+it builds the tagged commit and publishes it. Run from any other branch,
 the workflow does everything except the tag and the release, as a trial;
 the files are then attached to the run. Pushing a tag by hand still works
 too, if it matches the version in `static/version.properties`.
