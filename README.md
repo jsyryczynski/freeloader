@@ -35,8 +35,7 @@ check this). What it reports is a different matter:
   magnet links and command-line downloads. The figure is made up;
   nothing is actually uploaded.
 - The extra announces made while searching for peers (to every tracker
-  in the torrent, HTTP and UDP) report 0 uploaded and 0 downloaded, like
-  a client that has just started.
+  in the torrent, HTTP and UDP) report 0 uploaded and 0 downloaded.
 - Other peers are not told any upload figure; the BitTorrent protocol
   has no message for it.
 
