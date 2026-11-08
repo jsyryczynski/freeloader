@@ -47,6 +47,7 @@ public class UnitTests {
   private static final Class[] testClasses = {
       CommandLineDownloadTest.class,
       VersionTest.class,
+      BuildScriptVersionsTest.class,
       freeloader.gui.FormatTest.class,
       HashTest.class,
       PeerIdTest.class,
