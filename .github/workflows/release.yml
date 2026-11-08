@@ -1,0 +1,88 @@
+name: Release
+
+# Pushing a version tag (e.g. v0.2.0) builds the app on Windows and
+# publishes a release with the download and its source code. Running it
+# by hand ("Run workflow"), or a pull request that changes the build,
+# only builds, to check that a release would work; the files are then
+# attached to the run instead.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - build-exe.bat
+      - pom.xml
+      - .github/workflows/release.yml
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Read the version
+        id: version
+        shell: pwsh
+        run: |
+          $parts = @{}
+          foreach ($line in Get-Content static/version.properties) {
+            if ($line -match '^\s*(version\.\w+)\s*=\s*(\S+)') { $parts[$Matches[1]] = $Matches[2] }
+          }
+          $version = "$($parts['version.major']).$($parts['version.minor']).$($parts['version.tiny'])"
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            Write-Error "The tag $env:GITHUB_REF_NAME doesn't match the version $version in static/version.properties"
+            exit 1
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      # the libraries build-exe.bat downloads, kept between runs so most
+      # releases download nothing (the key changes with the jar list)
+      - name: Reuse downloaded libraries
+        uses: actions/cache@v6
+        with:
+          path: lib
+          key: libs-${{ hashFiles('build-exe.bat') }}
+
+      # build-exe.bat uses JAVA_HOME, which setup-java points at JDK 25
+      - name: Build the app
+        shell: cmd
+        run: build-exe.bat
+
+      # the GPL asks for the source to go with the app: the code at this
+      # version, without the git history
+      - name: Pack the source code
+        shell: pwsh
+        run: git archive --format=zip --prefix="Freeloader-${{ steps.version.outputs.version }}-source/" -o "dist/Freeloader-${{ steps.version.outputs.version }}-source.zip" HEAD
+
+      - name: Keep the files with the run
+        uses: actions/upload-artifact@v7
+        with:
+          name: Freeloader-${{ steps.version.outputs.version }}
+          path: |
+            dist/Freeloader-${{ steps.version.outputs.version }}.7z
+            dist/Freeloader-${{ steps.version.outputs.version }}-source.zip
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $notes = @"
+          Download **Freeloader-$env:VERSION.7z**, unpack it anywhere and run **Freeloader.exe** inside the Freeloader folder. No Java install is needed.
+
+          - Windows 11 opens .7z files in Explorer. On older Windows, use [7-Zip](https://www.7-zip.org/).
+          - The app isn't code-signed, so Windows may show "Windows protected your PC" the first time. Choose "More info", then "Run anyway".
+          - **Freeloader-$env:VERSION-source.zip** is the source code of this version (GPL v2 or later).
+          "@
+          gh release create $env:GITHUB_REF_NAME "dist/Freeloader-$env:VERSION.7z" "dist/Freeloader-$env:VERSION-source.zip" --title "Freeloader $env:VERSION" --notes $notes
