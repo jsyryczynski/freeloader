@@ -160,6 +160,14 @@ it on the OS you'll run it on. Run this way, with JavaFX on the plain
 classpath, the window prints a harmless "Unsupported JavaFX configuration"
 warning on startup; the `.exe` doesn't.
 
+### Pull requests
+
+Changes go through pull requests to `master`. The tests run on every pull
+request, and it can only be merged once they pass. Claude also reviews
+each pull request from a branch of this repository and comments on it
+(`.github/workflows/claude-review.yml`); Dependabot opens weekly pull
+requests for newer library and action versions.
+
 ### Releasing
 
 1. Set the new version in `static/version.properties` and `pom.xml` (a
