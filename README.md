@@ -22,6 +22,16 @@ is optional.
 - **Nothing about peers or trackers is saved.** What Freeloader learns
   about them is kept in memory only and gone when it exits.
 
+## Download
+
+Get **Freeloader-<version>.7z** from the
+[Releases page](https://github.com/jsyryczynski/freeloader/releases), unpack
+it anywhere and run `Freeloader.exe` in the `Freeloader` folder. No Java
+install is needed. Windows 11 opens `.7z` files in Explorer; on older
+Windows use [7-Zip](https://www.7-zip.org/). The app isn't code-signed, so
+Windows may warn "Windows protected your PC" the first time: choose "More
+info", then "Run anyway".
+
 ## Running it
 
 ### The window
@@ -144,6 +154,22 @@ jar carries the JavaFX native libraries of the OS that built it, so build
 it on the OS you'll run it on. Run this way, with JavaFX on the plain
 classpath, the window prints a harmless "Unsupported JavaFX configuration"
 warning on startup; the `.exe` doesn't.
+
+### Releasing
+
+1. Set the new version in `static/version.properties` and `pom.xml` (a
+   test checks that they match) and merge that.
+2. Tag the commit and push the tag:
+   ```
+   git tag v0.3.0
+   git push origin v0.3.0
+   ```
+
+The Release workflow (`.github/workflows/release.yml`) then builds the app
+on Windows and publishes a release with `Freeloader-<version>.7z` and
+`Freeloader-<version>-source.zip`, the source code of that version. A
+tag that doesn't match the version stops it. Running the workflow by hand
+only builds, to check that a release would work.
 
 ## License
 
