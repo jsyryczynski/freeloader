@@ -21,7 +21,7 @@
 
   <groupId>freeloader</groupId>
   <artifactId>freeloader</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
   <packaging>jar</packaging>
   <name>Freeloader</name>
   <description>Freeloader - No upload BitTorrent Client</description>
