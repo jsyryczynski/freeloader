@@ -47,6 +47,9 @@ class UpdateCheck {
   private static final String LATEST_RELEASE = "https://api.github.com/repos/jsyryczynski/freeloader/releases/latest";
   private static final int TIMEOUT_MS = 10000;
 
+  // a regular expression rather than a JSON parser, which the app doesn't
+  // have: the release's own tag_name is the first one in GitHub's answer,
+  // and the release workflow only accepts tags like v1.2.3 (no quotes)
   private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\" *: *\"([^\"]+)\"");
   private static final Pattern VERSION = Pattern.compile("v?([0-9]{1,6})[.]([0-9]{1,6})[.]([0-9]{1,6})");
 
