@@ -1,14 +1,28 @@
 name: Release
 
-# Pushing a version tag (e.g. v0.2.0) builds the app on Windows and
-# publishes a release with the download and its source code. Running it
-# by hand ("Run workflow"), or a pull request that changes the build,
-# only builds, to check that a release would work; the files are then
-# attached to the run instead.
+# Making a release: Actions -> Release -> "Run workflow" on master, with
+# the new version (e.g. 0.3.0). The workflow then commits that version on
+# top of master (on the build machine only; master itself is unchanged),
+# builds and tests the app from that commit, tags the commit v<version>
+# and publishes the release, so the tag, the app and its source code all
+# carry the version.
+#
+# Run with a version from any other branch, it does all of that except
+# the tag and the release: a trial. Run without a version, or by a pull
+# request that changes the build, it only builds the version in the
+# repository's files. Either way the files are attached to the run.
+#
+# Pushing a tag by hand also still works, if the tag matches the version
+# in static/version.properties.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 0.3.0 (empty: only build)'
+        required: false
+        default: ''
   pull_request:
     paths:
       - build-exe.bat
@@ -17,6 +31,10 @@ on:
 
 permissions:
   contents: write
+
+# one release at a time
+concurrency:
+  group: release-${{ github.ref }}
 
 jobs:
   release:
@@ -29,13 +47,37 @@ jobs:
           distribution: temurin
           java-version: 25
 
+      # outputs: version; stamp (commit this version first); publish
       - name: Read the version
         id: version
         shell: pwsh
+        env:
+          WANTED: ${{ inputs.version }}
         run: |
+          $wanted = "$env:WANTED".Trim().TrimStart('v')
+          if ($wanted) {
+            if ($wanted -notmatch '^[0-9]{1,6}[.][0-9]{1,6}[.][0-9]{1,6}$') {
+              Write-Error "Not a version: '$env:WANTED'. Give three numbers, e.g. 0.3.0"
+              exit 1
+            }
+            $publish = $env:GITHUB_REF -eq 'refs/heads/master'
+            if ($publish) {
+              git fetch --tags --quiet
+              if (git tag --list "v$wanted") {
+                Write-Error "v$wanted is already released; choose a new version"
+                exit 1
+              }
+            } else {
+              Write-Host "Not on master: a trial, nothing is published"
+            }
+            "version=$wanted" >> $env:GITHUB_OUTPUT
+            "stamp=true" >> $env:GITHUB_OUTPUT
+            "publish=$($publish.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
           $parts = @{}
           foreach ($line in Get-Content static/version.properties) {
-            if ($line -match '^\s*(version\.\w+)\s*=\s*(\S+)') { $parts[$Matches[1]] = $Matches[2] }
+            if ($line -match '^ *(version[.][a-z]+) *= *([0-9]+)') { $parts[$Matches[1]] = $Matches[2] }
           }
           $version = "$($parts['version.major']).$($parts['version.minor']).$($parts['version.tiny'])"
           if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
@@ -43,6 +85,33 @@ jobs:
             exit 1
           }
           "version=$version" >> $env:GITHUB_OUTPUT
+          "stamp=false" >> $env:GITHUB_OUTPUT
+          "publish=$(($env:GITHUB_REF_TYPE -eq 'tag').ToString().ToLower())" >> $env:GITHUB_OUTPUT
+
+      # the version goes in the same two files as by hand; committed so the
+      # build isn't marked "-modified" and the source zip matches the app
+      - name: Commit the version
+        if: steps.version.outputs.stamp == 'true'
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $major, $minor, $tiny = $env:VERSION.Split('.')
+          $lines = foreach ($line in Get-Content static/version.properties) {
+            if ($line -match '^ *version[.]major *=') { "version.major = $major" }
+            elseif ($line -match '^ *version[.]minor *=') { "version.minor = $minor" }
+            elseif ($line -match '^ *version[.]tiny *=') { "version.tiny  = $tiny" }
+            else { $line }
+          }
+          [IO.File]::WriteAllText("static/version.properties", ($lines -join "`n") + "`n")
+          $pom = [IO.File]::ReadAllText("pom.xml")
+          $stamped = [regex]::new('(<artifactId>freeloader</artifactId>[^<]*<version>)[^<]+').Replace($pom, '${1}' + $env:VERSION, 1)
+          if ($stamped -eq $pom -and $pom -notmatch "<version>$env:VERSION</version>") { throw "could not set the version in pom.xml" }
+          [IO.File]::WriteAllText("pom.xml", $stamped)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --quiet --allow-empty -am "Version $env:VERSION"
+          git show --stat --format="%h %s" HEAD
 
       # the libraries build-exe.bat downloads, kept between runs so most
       # releases download nothing (the key changes with the jar list)
@@ -134,12 +203,20 @@ jobs:
             dist/SHA256SUMS.txt
 
       - name: Publish the release
-        if: github.ref_type == 'tag'
+        if: steps.version.outputs.publish == 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
+          STAMP: ${{ steps.version.outputs.stamp }}
         run: |
+          $tag = "v$env:VERSION"
+          if ($env:STAMP -eq 'true') {
+            # the tag points at the version commit made above
+            git tag $tag
+            git push origin $tag
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
           $notes = @"
           **Freeloader-$env:VERSION-setup.exe**: run it to install Freeloader for your Windows user (no administrator rights needed), with a Start menu entry and an uninstaller.
 
@@ -153,4 +230,4 @@ jobs:
           "@
           # --generate-notes adds the pull requests merged since the previous
           # release below these notes
-          gh release create $env:GITHUB_REF_NAME "dist/Freeloader-$env:VERSION-setup.exe" "dist/Freeloader-$env:VERSION.7z" "dist/Freeloader-$env:VERSION-source.zip" dist/SHA256SUMS.txt --title "Freeloader $env:VERSION" --notes $notes --generate-notes
+          gh release create $tag "dist/Freeloader-$env:VERSION-setup.exe" "dist/Freeloader-$env:VERSION.7z" "dist/Freeloader-$env:VERSION-source.zip" dist/SHA256SUMS.txt --title "Freeloader $env:VERSION" --notes $notes --generate-notes --verify-tag
