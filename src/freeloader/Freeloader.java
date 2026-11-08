@@ -49,6 +49,7 @@ public class Freeloader {
   private static final String QUITONFINISH_OPTION = "q";
   private static final String LIMIT_OPTION = "l";
   private static final String HELP_OPTION = "h";
+  private static final String LOG_OPTION = "log";
 
   private static final Logger logger = Logger.getLogger(Freeloader.class);
 
@@ -60,6 +61,12 @@ public class Freeloader {
     // checked before anything starts up
     int port = parsePort(line);
     double limitMBps = line.hasOption(LIMIT_OPTION) ? parseLimit(line.getOptionValue(LIMIT_OPTION)) : 0;
+    boolean showGui = line.hasOption(GUI_OPTION) || !line.hasOption(METAFILE_OPTION);
+
+    // before anything is logged, so the log starts with the version
+    if (line.hasOption(LOG_OPTION) || (showGui && FullLog.isWanted())) {
+      FullLog.start();
+    }
 
     logger.info("Freeloader " + Version.getLongVersionString());
     logArguments(arguments);
@@ -69,7 +76,6 @@ public class Freeloader {
 
     environment.getNetworkManager().getDownloadLimiter().setBytesPerSecond(Math.round(limitMBps * 1000000));
 
-    boolean showGui = line.hasOption(GUI_OPTION) || !line.hasOption(METAFILE_OPTION);
     if (line.hasOption(METAFILE_OPTION)) {
       CommandLineDownload cli = new CommandLineDownload(environment);
       TorrentDownload download = cli.start(
@@ -214,6 +220,10 @@ public class Freeloader {
         .desc("limit the download speed, in MB/s (the window has its own setting)")
         .argName("MB/s")
         .hasArg()
+        .get());
+    options.addOption(Option.builder()
+        .longOpt(LOG_OPTION)
+        .desc("write the full log, with peer and tracker addresses, to .freeloader.log in your user folder")
         .get());
     options.addOption(Option.builder(HELP_OPTION)
         .longOpt("help")

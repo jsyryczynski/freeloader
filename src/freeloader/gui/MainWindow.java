@@ -23,6 +23,7 @@ package freeloader.gui;
 import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
 import freeloader.Environment;
+import freeloader.FullLog;
 import freeloader.Version;
 import freeloader.downloader.CompletedDownloadStore;
 import freeloader.downloader.MagnetDownloadStarter;
@@ -215,8 +216,17 @@ class MainWindow {
     MenuItem releases = new MenuItem("Releases Page");
     releases.setOnAction(event -> hostServices.showDocument(UpdateCheck.RELEASES_PAGE));
 
+    // records peer and tracker addresses, so only when asked for
+    CheckMenuItem fullLog = new CheckMenuItem("Write Full Log");
+    fullLog.setSelected(FullLog.isRunning());
+    fullLog.setOnAction(event -> FullLog.setWanted(fullLog.isSelected()));
+
+    MenuItem openLog = new MenuItem("Open Full Log");
+    openLog.setOnAction(event -> hostServices.showDocument(FullLog.FILE.toURI().toString()));
+
     Menu help = new Menu("Help");
-    help.getItems().addAll(checkForUpdates, releases);
+    help.setOnShowing(event -> openLog.setDisable(!FullLog.FILE.exists()));
+    help.getItems().addAll(checkForUpdates, releases, new SeparatorMenuItem(), fullLog, openLog);
 
     return new MenuBar(file, view, help);
   }
