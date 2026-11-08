@@ -40,8 +40,7 @@ check this). What it reports is a different matter:
   has no message for it.
 
 **Identifying itself.** Freeloader presents itself as **BitTorrent 4.4.0**,
-the official BitTorrent client of that version, never as Freeloader or
-BitThief:
+the official BitTorrent client of that version, never as Freeloader:
 
 - its peer ID starts with `M4-4-0--` (the rest is random, and new for
   each download), which is how BitTorrent 4.4.0 marks its peer IDs;
