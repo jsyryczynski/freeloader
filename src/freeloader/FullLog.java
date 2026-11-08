@@ -61,13 +61,22 @@ public class FullLog {
     return PREFS.getBoolean(KEY, false);
   }
 
-  public static void setWanted(boolean wanted) {
-    PREFS.putBoolean(KEY, wanted);
+  /**
+   * Starts or stops the log and remembers the choice. Returns whether the
+   * log is now running: false if it was wanted but the file couldn't be
+   * opened, in which case nothing is remembered.
+   */
+  public static boolean setWanted(boolean wanted) {
     if (wanted) {
       start();
+      if (!isRunning()) {
+        return false;
+      }
     } else {
       stop();
     }
+    PREFS.putBoolean(KEY, wanted);
+    return isRunning();
   }
 
   public static synchronized boolean isRunning() {

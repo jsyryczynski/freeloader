@@ -81,6 +81,13 @@ public class FullLogTest extends TestCase {
     assertEquals(log, log.indexOf("only once"), log.lastIndexOf("only once"));
   }
 
+  public void testNotRunningWhenTheFileCantBeOpened() {
+    // a folder can't be opened as a log file
+    FullLog.start(new File("target"));
+    assertFalse(FullLog.isRunning());
+    assertEquals(Level.ERROR, Logger.getRootLogger().getLevel());
+  }
+
   public void testOffUnlessStarted() {
     assertFalse(FullLog.isRunning());
     logger.debug("nobody writes this");

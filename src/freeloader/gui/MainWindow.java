@@ -219,7 +219,8 @@ class MainWindow {
     // records peer and tracker addresses, so only when asked for
     CheckMenuItem fullLog = new CheckMenuItem("Write Full Log");
     fullLog.setSelected(FullLog.isRunning());
-    fullLog.setOnAction(event -> FullLog.setWanted(fullLog.isSelected()));
+    // unticks itself again if the log file can't be opened
+    fullLog.setOnAction(event -> fullLog.setSelected(FullLog.setWanted(fullLog.isSelected())));
 
     MenuItem openLog = new MenuItem("Open Full Log");
     openLog.setOnAction(event -> hostServices.showDocument(FullLog.FILE.toURI().toString()));
