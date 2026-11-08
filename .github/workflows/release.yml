@@ -103,6 +103,8 @@ jobs:
           if ($remove.ExitCode -ne 0) { throw "uninstalling failed: $($remove.ExitCode)" }
           if (Test-Path $exe.FullName) { throw "uninstalling left Freeloader.exe behind" }
           Write-Host "uninstalled cleanly"
+          # --help exits with 1, which would otherwise count as this step's result
+          exit 0
 
       # the GPL asks for the source to go with the app: the code at this
       # version, without the git history
