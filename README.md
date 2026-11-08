@@ -24,11 +24,16 @@ is optional.
 
 ## Download
 
-Get **Freeloader-<version>.7z** from the
-[Releases page](https://github.com/jsyryczynski/freeloader/releases), unpack
-it anywhere and run `Freeloader.exe` in the `Freeloader` folder. No Java
-install is needed. Windows 11 opens `.7z` files in Explorer; on older
-Windows use [7-Zip](https://www.7-zip.org/). The app isn't code-signed, so
+From the [Releases page](https://github.com/jsyryczynski/freeloader/releases):
+
+- **Freeloader-<version>-setup.exe**: run it to install Freeloader for your
+  Windows user (no administrator rights needed), with a Start menu entry
+  and an uninstaller.
+- **Freeloader-<version>.7z**: no install. Unpack it anywhere and run
+  `Freeloader.exe` in the `Freeloader` folder. Windows 11 opens `.7z`
+  files in Explorer; on older Windows use [7-Zip](https://www.7-zip.org/).
+
+No Java install is needed either way. The files aren't code-signed, so
 Windows may warn "Windows protected your PC" the first time: choose "More
 info", then "Run anyway".
 
@@ -166,8 +171,11 @@ warning on startup; the `.exe` doesn't.
    ```
 
 The Release workflow (`.github/workflows/release.yml`) then builds the app
-on Windows and publishes a release with `Freeloader-<version>.7z` and
-`Freeloader-<version>-source.zip`, the source code of that version. A
+on Windows and publishes a release with `Freeloader-<version>-setup.exe` (an installer
+built by jpackage with WiX), `Freeloader-<version>.7z` and
+`Freeloader-<version>-source.zip`, the source code of that version. The
+installer is tested on the way: installed silently, started and
+uninstalled. A
 tag that doesn't match the version stops it. Running the workflow by hand
 only builds, to check that a release would work.
 
