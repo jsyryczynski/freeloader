@@ -112,6 +112,10 @@ public class TorrentDownload {
   public synchronized void start() {
     assertNotRunning();
     running = true;
+    // accept incoming peers from the start: the port is also given out
+    // through the DHT, UDP trackers and peer exchange, not just HTTP
+    // tracker announces (which used to be the only thing opening it)
+    getDefaultListener();
     environment.getScheduledExecutor().scheduleWithFixedDelay(
         new Maintenance(), 0, 15, TimeUnit.SECONDS);
     scheduleNextPeerSearch(0);

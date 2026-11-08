@@ -151,7 +151,7 @@ that way (a zip of a compressed runtime is about 42 MB).
 
 ```
 mvn clean package
-java -jar target/freeloader-0.2.0.jar --help
+java -jar target/freeloader-0.2.1.jar --help
 ```
 
 `mvn clean package` also runs the tests (`mvn test` runs only those). The

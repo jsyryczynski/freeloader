@@ -91,8 +91,7 @@ public class NeverUploadEndToEndTest extends TestCase {
     download = new TorrentDownload(new NoDhtEnvironment(), configuration);
     download.start();
     assertTrue("the test file was not recognised as complete", waitUntilComplete(download));
-    // what a tracker announce does in the app: open the listening port
-    download.getDefaultListener();
+    // no tracker here: starting the download must have opened the port
 
     ByteArrayOutputStream received = new ByteArrayOutputStream();
     List<Integer> messageIds = Collections.synchronizedList(new ArrayList<Integer>());
