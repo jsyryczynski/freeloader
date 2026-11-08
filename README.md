@@ -47,6 +47,10 @@ lists live downloads on top and finished ones from earlier runs below. The
 selected download's overview and statistics charts are shown underneath.
 View -> Dark Theme switches to the dark theme.
 
+At start, the window asks GitHub whether a newer release exists and, if
+so, shows a link to it in the status bar. That request carries nothing
+but the app version. Help -> Check for Updates at Start turns it off.
+
 ### The command line
 
 Give a torrent or magnet link and a folder. Freeloader then downloads

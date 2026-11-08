@@ -47,6 +47,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -69,6 +70,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -111,6 +113,8 @@ class MainWindow {
   private final StackPane detailsHolder = new StackPane();
   private final VBox magnetLookups = new VBox(4);
   private final Label summary = new Label();
+  // shown when GitHub has a newer release (see UpdateCheck)
+  private final Hyperlink updateLink = new Hyperlink();
 
   // info hashes of downloads being (re)started in the background: building
   // a TorrentDownload re-checks existing file data, which can take a while
@@ -155,6 +159,9 @@ class MainWindow {
     refresh();
     stage.show();
     resumePreviousDownloads();
+    if (UpdateCheck.isEnabled()) {
+      UpdateCheck.start(this::showNewerVersion);
+    }
 
     Timeline tableRefresh = new Timeline(new KeyFrame(TABLE_REFRESH, event -> refresh()));
     tableRefresh.setCycleCount(Timeline.INDEFINITE);
@@ -201,7 +208,17 @@ class MainWindow {
     Menu view = new Menu("View");
     view.getItems().add(darkTheme);
 
-    return new MenuBar(file, view);
+    CheckMenuItem checkForUpdates = new CheckMenuItem("Check for Updates at Start");
+    checkForUpdates.setSelected(UpdateCheck.isEnabled());
+    checkForUpdates.setOnAction(event -> UpdateCheck.setEnabled(checkForUpdates.isSelected()));
+
+    MenuItem releases = new MenuItem("Releases Page");
+    releases.setOnAction(event -> hostServices.showDocument(UpdateCheck.RELEASES_PAGE));
+
+    Menu help = new Menu("Help");
+    help.getItems().addAll(checkForUpdates, releases);
+
+    return new MenuBar(file, view, help);
   }
 
   private ToolBar createToolBar() {
@@ -297,11 +314,22 @@ class MainWindow {
 
   private Node createStatusArea() {
     summary.getStyleClass().addAll(Styles.TEXT_SMALL, Styles.TEXT_MUTED);
-    HBox statusBar = new HBox(summary);
+    updateLink.getStyleClass().add(Styles.TEXT_SMALL);
+    updateLink.setOnAction(event -> hostServices.showDocument(UpdateCheck.RELEASES_PAGE));
+    updateLink.setVisible(false);
+    Region spacer = new Region();
+    HBox.setHgrow(spacer, Priority.ALWAYS);
+    HBox statusBar = new HBox(summary, spacer, updateLink);
+    statusBar.setAlignment(Pos.CENTER_LEFT);
     statusBar.setPadding(new Insets(4, 12, 6, 12));
 
     magnetLookups.setPadding(new Insets(0, 12, 0, 12));
     return new VBox(magnetLookups, statusBar);
+  }
+
+  private void showNewerVersion(String tag) {
+    updateLink.setText("Freeloader " + tag.replaceFirst("^v", "") + " is available");
+    updateLink.setVisible(true);
   }
 
   private static Label muted(String text) {
