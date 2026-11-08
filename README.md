@@ -20,7 +20,8 @@ is optional.
 - **Resuming:** stopped and unfinished downloads pick up where they left
   off, after checking the data already on disk.
 - **Nothing about peers or trackers is saved.** What Freeloader learns
-  about them is kept in memory only and gone when it exits.
+  about them is kept in memory only and gone when it exits, unless you
+  turn on the full log (below).
 
 ## What other clients and trackers see
 
@@ -103,6 +104,7 @@ Put magnet links in quotes: they contain `&`. If a download is interrupted
 | `-p`, `--port` | listening port (default 6811) |
 | `-g`, `--gui` | open the window too, with the download in it |
 | `-q`, `--quitonfinish` | with `--gui`: quit when the download finishes |
+| `--log` | write the full log (see below) |
 | `-h`, `--help` | list the options |
 
 Command-line downloads stay out of the window's resume list and history.
@@ -114,6 +116,21 @@ Command-line downloads stay out of the window's resume list and history.
   `HKEY_CURRENT_USER\Software\JavaSoft\Prefs`).
 - **Downloads to resume:** `%USERPROFILE%\.freeloader-resume`.
 - **Finished downloads shown in the window:** `%USERPROFILE%\.freeloader-history`.
+- **The full log**, only when turned on: `.freeloader.log` in the same
+  folder.
+
+### The full log
+
+Off by default. When on, Freeloader writes everything it logs at debug
+level, which helps find out what went wrong. Turn it on with `--log` on
+the command line, or in the window with Help -> Write Full Log (the
+window remembers it; Help -> Open Full Log shows it). It goes to
+`.freeloader.log` in your user folder, up to 10 MB, plus up to four older
+files (`.freeloader.log.1` and so on) before the oldest is dropped.
+
+The full log records the addresses of the peers and trackers Freeloader
+talks to, which it otherwise never saves. Delete the files when you no
+longer need them.
 
 ## Building
 

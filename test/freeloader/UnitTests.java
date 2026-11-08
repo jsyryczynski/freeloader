@@ -48,6 +48,7 @@ public class UnitTests {
       CommandLineDownloadTest.class,
       VersionTest.class,
       BuildScriptVersionsTest.class,
+      FullLogTest.class,
       freeloader.gui.FormatTest.class,
       freeloader.gui.UpdateCheckTest.class,
       HashTest.class,
