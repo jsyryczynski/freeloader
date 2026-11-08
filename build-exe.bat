@@ -17,7 +17,7 @@ set "JDK25="
 if exist "%~dp0build-exe.local.bat" call "%~dp0build-exe.local.bat"
 set "USEJDK="
 if defined JAVA_HOME if exist "%JAVA_HOME%\release" (
-  findstr /b /c:"JAVA_VERSION=\"25" "%JAVA_HOME%\release" >nul && set "USEJDK=%JAVA_HOME%"
+  findstr /b /r /c:"JAVA_VERSION=.25" "%JAVA_HOME%\release" >nul && set "USEJDK=%JAVA_HOME%"
 )
 if not defined USEJDK set "USEJDK=%JDK25%"
 set "JAVA_HOME=%USEJDK%"
