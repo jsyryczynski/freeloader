@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Freeloader - No upload BitTorrent Client
+  Copyright (C) 2022-2026 Jan Syryczyński
+
+  Maven is now the sole build (the old Ant build.xml has been removed).
+  Targets Java 25.
+
+  All dependencies are resolved from Maven Central at their normal
+  coordinates; none are kept in the repository.
+
+  JavaFX: the org.openjfx artifacts pick their native (per-OS) classifier
+  from the machine running the build, so a jar built here runs on that
+  same OS. The Windows .exe (build-exe.bat) bundles the Windows JavaFX
+  jars directly.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>freeloader</groupId>
+  <artifactId>freeloader</artifactId>
+  <version>0.2.0</version>
+  <packaging>jar</packaging>
+  <name>Freeloader</name>
+  <description>Freeloader - No upload BitTorrent Client</description>
+
+  <properties>
+    <maven.compiler.release>25</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <!-- runtime dependencies -->
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>1.11.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.23.0</version>
+    </dependency>
+    <!-- the maintained drop-in replacement for log4j 1.2: same API and
+         configuration, with log4j 1.2's security problems fixed -->
+    <dependency>
+      <groupId>ch.qos.reload4j</groupId>
+      <artifactId>reload4j</artifactId>
+      <version>1.2.27</version>
+    </dependency>
+    <!-- JavaFX and AtlantaFX 3 need Java 25 -->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>27.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.mkpaz</groupId>
+      <artifactId>atlantafx-base</artifactId>
+      <version>3.0.0</version>
+      <!-- the JavaFX above is used, so the two can't drift apart -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.openjfx</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- test dependencies -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- mocks classes as well as interfaces: the separate class
+         extension, cglib and objenesis are built in since EasyMock 3 -->
+    <dependency>
+      <groupId>org.easymock</groupId>
+      <artifactId>easymock</artifactId>
+      <version>5.7.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>${project.artifactId}-${project.version}</finalName>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>static</directory>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.16.0</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>freeloader.Freeloader</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.11.0</version>
+        <executions>
+          <execution>
+            <id>copy-runtime-deps</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <includeScope>compile</includeScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <!-- This codebase composes its own JUnit3-style suites by hand
+               (AllTests = UnitTests + FunctionalTests) rather than relying
+               on filename-pattern discovery. Surefire's default discovery
+               (**/*Test.java, **/*Tests.java, **/*TestCase.java) fights
+               this: it picks up ExtendedTestCase (a shared assertion-helper
+               base class, not a real test) as an empty failing suite, and
+               runs most tests multiple times through different discovery
+               paths, which exposed order-dependent flakiness in
+               TokenTest.testSecretChanging (it relies on Token's shared
+               static secret-rotation state, and running it repeatedly with
+               different tests interleaved before it violates that). Point
+               Surefire at the project's own entry point instead. -->
+          <includes>
+            <include>**/AllTests.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
