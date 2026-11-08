@@ -45,14 +45,17 @@ rem versions in step with pom.xml. The JavaFX jars are the
 rem Windows-specific ("-win") builds, which carry the native libraries
 rem the bundled app needs.
 
+rem Maven Central, and Google's official mirror of it for when Central
+rem refuses (it sometimes blocks the shared addresses of build machines)
 set "CENTRAL=https://repo1.maven.org/maven2"
-call :fetch commons-cli-1.11.0.jar "%CENTRAL%/commons-cli/commons-cli/1.11.0" || exit /b 1
-call :fetch commons-codec-1.23.0.jar "%CENTRAL%/commons-codec/commons-codec/1.23.0" || exit /b 1
-call :fetch reload4j-1.2.27.jar "%CENTRAL%/ch/qos/reload4j/reload4j/1.2.27" || exit /b 1
-call :fetch javafx-base-27.0.1-win.jar "%CENTRAL%/org/openjfx/javafx-base/27.0.1" || exit /b 1
-call :fetch javafx-graphics-27.0.1-win.jar "%CENTRAL%/org/openjfx/javafx-graphics/27.0.1" || exit /b 1
-call :fetch javafx-controls-27.0.1-win.jar "%CENTRAL%/org/openjfx/javafx-controls/27.0.1" || exit /b 1
-call :fetch atlantafx-base-3.0.0.jar "%CENTRAL%/io/github/mkpaz/atlantafx-base/3.0.0" || exit /b 1
+set "MIRROR=https://maven-central.storage-download.googleapis.com/maven2"
+call :fetch commons-cli-1.11.0.jar commons-cli/commons-cli/1.11.0 || exit /b 1
+call :fetch commons-codec-1.23.0.jar commons-codec/commons-codec/1.23.0 || exit /b 1
+call :fetch reload4j-1.2.27.jar ch/qos/reload4j/reload4j/1.2.27 || exit /b 1
+call :fetch javafx-base-27.0.1-win.jar org/openjfx/javafx-base/27.0.1 || exit /b 1
+call :fetch javafx-graphics-27.0.1-win.jar org/openjfx/javafx-graphics/27.0.1 || exit /b 1
+call :fetch javafx-controls-27.0.1-win.jar org/openjfx/javafx-controls/27.0.1 || exit /b 1
+call :fetch atlantafx-base-3.0.0.jar io/github/mkpaz/atlantafx-base/3.0.0 || exit /b 1
 
 echo === Compiling ===
 set "CLASSES=build\classes"
@@ -174,14 +177,14 @@ echo (dist\Freeloader is fully self-contained: no Java install needed.)
 endlocal
 exit /b 0
 
-rem :fetch <jar name> <Maven Central directory URL>
-rem Downloads the jar into lib\ unless it's already there, then copies
-rem it into the build.
+rem :fetch <jar name> <directory in the Maven repository>
+rem Downloads the jar into lib\ unless it's already there, from Maven
+rem Central or else its mirror, then copies it into the build.
 :fetch
 if not exist lib mkdir lib
 if not exist "lib\%~1" (
   echo   downloading %~1...
-  powershell -NoProfile -Command "Invoke-WebRequest -Uri '%~2/%~1' -OutFile 'lib\%~1' -UseBasicParsing"
+  powershell -NoProfile -Command "foreach ($base in '%CENTRAL%', '%MIRROR%') { try { Invoke-WebRequest -Uri ($base + '/%~2/%~1') -OutFile 'lib\%~1' -UseBasicParsing -ErrorAction Stop; break } catch { Write-Host ('    not from ' + $base + ': ' + $_.Exception.Message) } }"
 )
 if not exist "lib\%~1" (
   echo Could not obtain lib\%~1 -- check your internet connection, or place the file there manually.
