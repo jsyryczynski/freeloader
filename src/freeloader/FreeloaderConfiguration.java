@@ -64,8 +64,10 @@ public class FreeloaderConfiguration {
     return readBooleanProperty("stats.enable");
   }
 
+  /** The statistics file; ${java.io.tmpdir} in it means the temp folder. */
   public String getStatsLogFile() {
-    return properties.getProperty("stats.file");
+    String file = properties.getProperty("stats.file");
+    return file == null ? null : file.replace("${java.io.tmpdir}", System.getProperty("java.io.tmpdir"));
   }
 
   private boolean readBooleanProperty(String key) {

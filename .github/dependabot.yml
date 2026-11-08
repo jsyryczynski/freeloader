@@ -1,0 +1,13 @@
+# Weekly PRs for newer library and action versions. For a library also
+# in build-exe.bat, update it there too: BuildScriptVersionsTest fails
+# until both match.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

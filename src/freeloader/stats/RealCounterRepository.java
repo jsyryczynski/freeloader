@@ -29,6 +29,7 @@ import freeloader.stats.recorder.Recorder;
 import freeloader.util.SystemTimeSource;
 import freeloader.util.TimeSource;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -293,6 +294,8 @@ public class RealCounterRepository implements CounterRepository {
 
   public void setFileForWriting(String filename) {
     try {
+      // the folder may not exist yet (the default is one in the temp folder)
+      new File(filename).getAbsoluteFile().getParentFile().mkdirs();
       final FileWriter fileWriter = new FileWriter(filename, true);
       statsWriter = new MinimalWriter() {
         public void write(String string) throws IOException {
