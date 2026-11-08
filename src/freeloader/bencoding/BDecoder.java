@@ -61,6 +61,10 @@ public class BDecoder {
     if (read == -1) {
       throw new IOException("unexpected end of stream");
     }
+    // InputStream.read gives a byte as 0 to 255
+    if (read < 0 || read > 255) {
+      throw new IOException("not a byte: " + read);
+    }
     return (byte) read;
   }
 }

@@ -142,7 +142,8 @@ public class Storage {
     int offset = 0;
     for (PieceFraction fraction : fractions) {
       fileRepository.write(bytes, offset, fraction.file, fraction.offset, fraction.size);
-      offset += fraction.size;
+      // a piece is far smaller than 2 GB; toIntExact would throw, not wrap
+      offset += Math.toIntExact(fraction.size);
     }
     return offset;
   }
@@ -151,7 +152,8 @@ public class Storage {
     int offset = 0;
     for (PieceFraction fraction : fractions) {
       fileRepository.read(fraction.file, fraction.offset, bytes, offset, fraction.size);
-      offset += fraction.size;
+      // a piece is far smaller than 2 GB; toIntExact would throw, not wrap
+      offset += Math.toIntExact(fraction.size);
     }
     return offset;
   }
