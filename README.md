@@ -221,25 +221,30 @@ requests for newer library and action versions.
 
 ### Releasing
 
-1. Set the new version in `static/version.properties` and `pom.xml` (a
-   test checks that they match) and merge that.
-2. Tag the commit and push the tag:
-   ```
-   git tag v0.3.0
-   git push origin v0.3.0
-   ```
+On GitHub: **Actions -> Release -> Run workflow**, keep the branch on
+`master`, enter the new version (e.g. `0.3.0`) and click **Run workflow**.
+No pull request or local command is needed.
 
-The Release workflow (`.github/workflows/release.yml`) then builds the app
-on Windows and publishes a release with `Freeloader-<version>-setup.exe` (an installer
-built by jpackage with WiX), `Freeloader-<version>.7z` and
-`Freeloader-<version>-source.zip`, the source code of that version. The
-installer is tested on the way: installed silently, started and
-uninstalled. A
-tag that doesn't match the version stops it. Running the workflow by hand
-only builds, to check that a release would work.
+The Release workflow (`.github/workflows/release.yml`) then:
 
-Each release also gets `SHA256SUMS.txt` with the files' checksums, and
-its notes list the pull requests merged since the previous release.
+1. commits that version in `static/version.properties` and `pom.xml` on
+   top of `master`, on the build machine only (`master` keeps its files);
+2. builds the app on Windows from that commit, with
+   `Freeloader-<version>-setup.exe` (an installer built by jpackage with
+   WiX), `Freeloader-<version>.7z`, `Freeloader-<version>-source.zip` (the
+   source code of that version) and `SHA256SUMS.txt` (the files'
+   checksums);
+3. tests the installer: installs it silently, starts the app and
+   uninstalls it;
+4. tags the version commit `v<version>` and publishes the release. Its
+   notes list the pull requests merged since the previous release.
+
+A version that is already released is refused. If a run tagged the
+version but failed before publishing, run it again with the same version:
+it builds the tagged commit and publishes it. Run from any other branch,
+the workflow does everything except the tag and the release, as a trial;
+the files are then attached to the run. Pushing a tag by hand still works
+too, if it matches the version in `static/version.properties`.
 
 ## License
 
