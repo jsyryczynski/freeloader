@@ -37,6 +37,10 @@ No Java install is needed either way. The files aren't code-signed, so
 Windows may warn "Windows protected your PC" the first time: choose "More
 info", then "Run anyway".
 
+Each release also has `SHA256SUMS.txt`, the SHA-256 checksum of each file.
+To check that a download is complete and unchanged, compare it with what
+`Get-FileHash <file>` prints in PowerShell.
+
 ## Running it
 
 ### The window
@@ -186,6 +190,9 @@ installer is tested on the way: installed silently, started and
 uninstalled. A
 tag that doesn't match the version stops it. Running the workflow by hand
 only builds, to check that a release would work.
+
+Each release also gets `SHA256SUMS.txt` with the files' checksums, and
+its notes list the pull requests merged since the previous release.
 
 ## License
 
